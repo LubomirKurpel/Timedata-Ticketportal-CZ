@@ -62,7 +62,15 @@ public class ticketPortalProvider extends Activity  {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
                 // red screen
-                timedataApi.sendLogData("api error: checkQRCodeStatus", "onFailure");
+                // @dev: added advanced logging
+                String errorMessage = e.getMessage();
+                String stackTrace = Log.getStackTraceString(e);
+
+                Log.e("OkHttpFailure", "Request failed: " + errorMessage);
+                Log.e("OkHttpFailure", "Stacktrace:\n" + stackTrace);
+
+                timedataApi.sendLogData("api error: checkQRCodeStatus", "onFailure: " + errorMessage + "\n" + stackTrace);
+
                 httpStatusCodeForRedirect = "red";
             }
             @Override
