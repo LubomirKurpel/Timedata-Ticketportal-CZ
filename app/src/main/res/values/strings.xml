@@ -1,0 +1,8 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Timedata</string>
+    <string-array name="dropdown_values">
+        <item>Dnu</item>
+        <item>Von</item>
+    </string-array>
+</resources>
