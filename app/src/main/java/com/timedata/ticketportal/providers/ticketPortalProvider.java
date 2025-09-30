@@ -90,7 +90,15 @@ public class ticketPortalProvider extends Activity  {
                                 @Override
                                 public void onFailure(@NonNull Call call, @NonNull IOException e) {
                                     // red screen
-                                    timedataApi.sendLogData("api error: checkQRCodeStatus", "onFailure 2");
+                                    // @dev: added advanced logging
+                                    String errorMessage = e.getMessage();
+                                    String stackTrace = Log.getStackTraceString(e);
+
+                                    Log.e("OkHttpFailure", "Request failed: " + errorMessage);
+                                    Log.e("OkHttpFailure", "Stacktrace:\n" + stackTrace);
+
+                                    timedataApi.sendLogData("api error: checkQRCodeStatus", "onFailure 2: " + errorMessage + "\n" + stackTrace);
+
                                     httpStatusCodeForRedirect = "red";
                                 }
                                 @Override
@@ -161,7 +169,15 @@ public class ticketPortalProvider extends Activity  {
                                                     @Override
                                                     public void onFailure(@NonNull Call call, @NonNull IOException e) {
                                                         // red screen
-                                                        timedataApi.sendLogData("api error: checkQRCodeStatus", "onResponse VALIDACIA onFailure");
+                                                        // @dev: added advanced logging
+                                                        String errorMessage = e.getMessage();
+                                                        String stackTrace = Log.getStackTraceString(e);
+
+                                                        Log.e("OkHttpFailure", "Request failed: " + errorMessage);
+                                                        Log.e("OkHttpFailure", "Stacktrace:\n" + stackTrace);
+
+                                                        timedataApi.sendLogData("api error: checkQRCodeStatus", "onResponse VALIDACIA onFailure: " + errorMessage + "\n" + stackTrace);
+
                                                         httpStatusCodeForRedirect = "red";
                                                     }
                                                     @Override
@@ -291,7 +307,15 @@ public class ticketPortalProvider extends Activity  {
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                timedataApi.sendLogData("api error: validateQRCode", "onFailure");
+                // red screen
+                // @dev: added advanced logging
+                String errorMessage = e.getMessage();
+                String stackTrace = Log.getStackTraceString(e);
+
+                Log.e("OkHttpFailure", "Request failed: " + errorMessage);
+                Log.e("OkHttpFailure", "Stacktrace:\n" + stackTrace);
+
+                timedataApi.sendLogData("api error: validateQRCode", "onResponse VALIDACIA onFailure: " + errorMessage + "\n" + stackTrace);
             }
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
@@ -310,7 +334,15 @@ public class ticketPortalProvider extends Activity  {
                         client.newCall(request2).enqueue(new Callback() {
                             @Override
                             public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                                timedataApi.sendLogData("api error: validateQRCode", "onFailure request2");
+                                // red screen
+                                // @dev: added advanced logging
+                                String errorMessage = e.getMessage();
+                                String stackTrace = Log.getStackTraceString(e);
+
+                                Log.e("OkHttpFailure", "Request failed: " + errorMessage);
+                                Log.e("OkHttpFailure", "Stacktrace:\n" + stackTrace);
+
+                                timedataApi.sendLogData("api error: validateQRCode", "onFailure request2: " + errorMessage + "\n" + stackTrace);
                             }
                             @Override
                             public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
@@ -394,7 +426,14 @@ public class ticketPortalProvider extends Activity  {
                                             client.newCall(request4).enqueue(new Callback() {
                                                 @Override
                                                 public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                                                    timedataApi.sendLogData("api error: validateQRCode", "onFailure validacia");
+                                                    // @dev: added advanced logging
+                                                    String errorMessage = e.getMessage();
+                                                    String stackTrace = Log.getStackTraceString(e);
+
+                                                    Log.e("OkHttpFailure", "Request failed: " + errorMessage);
+                                                    Log.e("OkHttpFailure", "Stacktrace:\n" + stackTrace);
+
+                                                    timedataApi.sendLogData("api error: validateQRCode", "onFailure validacia: " + errorMessage + "\n" + stackTrace);
                                                 }
                                                 @Override
                                                 public void onResponse(@NonNull Call call, @NonNull Response response4) throws IOException {
