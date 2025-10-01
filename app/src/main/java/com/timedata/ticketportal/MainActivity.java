@@ -1,5 +1,6 @@
 package com.timedata.ticketportal;
 
+import static android.app.PendingIntent.FLAG_MUTABLE;
 import static com.timedata.ticketportal.classes.timedataCoreFunctions.trim;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -17,6 +18,9 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.nfc.NfcAdapter;
+import android.nfc.tech.IsoDep;
+import android.nfc.tech.NfcA;
+import android.nfc.tech.NfcB;
 import android.os.BatteryManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -29,9 +33,14 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.common.apiutil.CommonException;
+import com.common.apiutil.DeviceAlreadyOpenException;
+import com.common.apiutil.TimeoutException;
 import com.common.apiutil.decode.DecodeReader;
+import com.common.apiutil.nfc.Nfc;
 import com.common.apiutil.pos.RS485Reader;
 import com.common.apiutil.util.SDKUtil;
+import com.common.apiutil.util.StringUtil;
 import com.common.callback.IDecodeReaderListener;
 import com.timedata.ticketportal.classes.timedataApi;
 import com.timedata.ticketportal.classes.timedataCoreFunctions;
@@ -42,7 +51,9 @@ import org.json.JSONException;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.TimeZone;
 
@@ -65,13 +76,9 @@ public class MainActivity extends AppCompatActivity implements KeyEventResolver.
     private DevicePolicyManager mDevicePolicyManager;
 
     // QR code scanner
-    private TextView textRestult, showTime;
+    private TextView showTime;
     // nfc
     final Context c = this;
-    private NfcAdapter nfcAdapter = null;
-    private IntentFilter[] intentFiltersArray = null;
-    private String[][] techListsArray = null;
-    private PendingIntent pendingIntent = null;
     int logoutTimeCLickCount = 0;
     int logoutCode = 123654;
 
@@ -79,13 +86,18 @@ public class MainActivity extends AppCompatActivity implements KeyEventResolver.
     private KeyEventResolver mKeyEventResolver;
     boolean isreading;
     boolean read = false;
-    private RS485Reader mRS485Reader;
     public static String temporaryQrCode;
-    public static int canRedirect = 0;
 
     ticketPortalProvider ticketPortalProvider;
 
     private TextView deviceIdEditText;
+
+    // NFC scanning
+    Nfc nfc = new Nfc(this);
+
+    private ReadThread readThread;
+
+    private boolean isNfcOpen = false;
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -156,8 +168,6 @@ public class MainActivity extends AppCompatActivity implements KeyEventResolver.
             }
         }, 1000);
 
-        canRedirect = 0;
-
         // timedataApi.sendLogData("Log base64 test", "test");
         // Log.d("Log base64 test", "test");
 
@@ -166,7 +176,176 @@ public class MainActivity extends AppCompatActivity implements KeyEventResolver.
 
         // timedataApi.sendLogData("Log device ID", "Log device ID as IMEI");
 
+
+        // NFC - New android 12 - tps900
+        try {
+            nfc.open();
+        } catch (CommonException e) {
+            e.printStackTrace();
+        }
+
+        readThread = new ReadThread();
+        readThread.start();
+
+        /*
+        pendingIntent = PendingIntent.getActivity(
+                this, 0, new Intent(this, getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), FLAG_MUTABLE);
+        intentFiltersArray = new IntentFilter[]{new IntentFilter(NfcAdapter.ACTION_TECH_DISCOVERED)};
+        techListsArray = new String[][]{new String[]{NfcA.class.getName()}, new String[]{NfcB.class.getName()}, new String[]{IsoDep.class.getName()}};
+         */
+
     }
+
+    // NFC - New android 12 - tps900
+    private static boolean isChecking = false;
+
+    private class ReadThread extends Thread {
+        byte[] nfcData = null;
+
+        @Override
+        public void run() {
+            isChecking = true;
+            while (isChecking) {
+                try {
+                    // Attempt to activate the NFC for 2 seconds
+                    nfcData = nfc.activate(2 * 1000); // 2 seconds timeout
+
+                    if (nfcData != null) {
+                        // Successfully received NFC data
+                        Log.d("SHOW_NFC_DATA", new String(nfcData, StandardCharsets.UTF_8));
+
+                        // handler.sendMessage(handler.obtainMessage(SHOW_NFC_DATA, nfcData));
+
+                        // Process the NFC data
+                        readNFCtag(nfcData);
+
+                        // Stop the loop after successful read
+                        isChecking = false;
+                    } else {
+                        // Handle case where no data is received within timeout
+                        Log.d("NFC_TAG", "No NFC data received. Retrying...");
+                    }
+                } catch (TimeoutException e) {
+                    // Handle the specific timeout exception gracefully
+                    Log.w("NFC_TAG", "NFC activation timed out. Retrying...");
+                } catch (CommonException e) {
+                    // Log and handle any other NFC-related exceptions
+                    Log.e("NFC_TAG", "An error occurred during NFC activation: " + e.getMessage());
+                    e.printStackTrace();
+
+                    // Optionally, break out of the loop to prevent infinite retries
+                    isChecking = false;
+                } catch (Exception e) {
+                    // Catch any unexpected exceptions to prevent app crash
+                    Log.e("NFC_TAG", "Unexpected error: " + e.getMessage());
+                    e.printStackTrace();
+
+                    // Stop checking if an unexpected error occurs
+                    isChecking = false;
+                }
+            }
+        }
+
+        // Method to stop the thread gracefully
+        public void stopReading() {
+            isChecking = false;
+            this.interrupt(); // Interrupt the thread if it's waiting or sleeping
+        }
+    }
+
+
+    protected void readNFCtag(byte[] nfcData) {
+        if (nfcData != null && nfcData.length > 0) {
+            System.out.println("New tag found !!!");
+
+            // Start loopResultCode handler thread
+            startResultLoop();
+
+
+            Log.d("Raw NFC Data", Arrays.toString(nfcData));
+
+            byte[] uid = new byte[nfcData[5]];
+
+            System.arraycopy(nfcData, 6, uid, 0, nfcData[5]);
+
+            Log.d("NFC DATA", "nfcdata["+ StringUtil.toHexString(uid) +"]");
+
+            String str = StringUtil.toHexString(uid);
+
+
+
+            // Optional: format as A1-B2-C3-D4
+            /*
+            String formattedUID = formatHexUID(StringUtil.toHexString(uid));
+
+            // formattedUID = "40-71-B4-0C";
+
+            Log.d("Formatted NFC UID", formattedUID);
+
+            // Log the UID
+            timedataApi.sendLogData("Tag UID", formattedUID);
+
+            // Prepare the intent for the next activity
+            Intent intentActivity = new Intent(this, scanningPageResult.class);
+            intentActivity.putExtra("UID", formattedUID);
+
+            int finalResult = 0;
+            int finalResultStatus = 0;
+
+            // Pass data to the next activity
+            intentActivity.putExtra("locker_value", String.valueOf(finalResult));
+            intentActivity.putExtra("locker_status", String.valueOf(finalResultStatus));
+            startActivity(intentActivity);
+            */
+
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+
+                    // api call
+                    ticketPortalProvider = new ticketPortalProvider();
+                    if (str.length() > 3) {
+                        Log.d("STRING FROM SCANNER checkQRCodeStatus",str);
+
+                        new Thread(() -> {
+                            try {
+                                ticketPortalProvider.checkQRCodeStatus(str, c);
+                            } catch (Exception e) {
+                                Log.e("API", "Error: " + e.getMessage());
+                            }
+                        }).start();
+
+                    }
+
+                }
+            });
+            
+            
+            
+
+            
+
+        } else {
+            System.out.println("No new tag found !!!");
+        }
+    }
+
+    private String formatHexUID(String hexUID) {
+        int interval = 2;
+        char separator = '-';
+
+        StringBuilder sb = new StringBuilder(hexUID);
+        for (int i = 0; i < hexUID.length() / interval; i++) {
+            sb.insert(((i + 1) * interval) + i, separator);
+        }
+
+        if (sb.toString().endsWith("-")) {
+            return sb.substring(0, sb.length() - 1);
+        }
+        return sb.toString();
+    }
+
+
 
     // Method to load the device ID from SharedPreferences
     private void loadDeviceId() {
@@ -268,6 +447,8 @@ public class MainActivity extends AppCompatActivity implements KeyEventResolver.
     }
 
     Handler handler = new Handler();
+
+    /*
     Runnable runnable = new Runnable() {
         @Override
         public void run() {
@@ -282,6 +463,24 @@ public class MainActivity extends AppCompatActivity implements KeyEventResolver.
             }
         }
     };
+    */
+
+
+    private void startResultLoop() {
+        handler.postDelayed(resultChecker, 500);
+    }
+
+    private void stopResultLoop() {
+        handler.removeCallbacks(resultChecker);
+    }
+
+    Runnable resultChecker = new Runnable() {
+        @Override
+        public void run() {
+            loopResultCode();
+            handler.postDelayed(this, 1000); // raz za sekundu stačí
+        }
+    };
 
 
     @Override
@@ -290,7 +489,6 @@ public class MainActivity extends AppCompatActivity implements KeyEventResolver.
         // Active Manager is supported on Android M
         super.onStart();
 
-        canRedirect = 0;
         logoutTimeCLickCount = 0;
 
         if (mDevicePolicyManager.isLockTaskPermitted(this.getPackageName())) {
@@ -301,7 +499,7 @@ public class MainActivity extends AppCompatActivity implements KeyEventResolver.
             }
         }
 
-        handler.post(runnable);
+        // handler.post(runnable);
 
         // turn off lights
         timedataCoreFunctions.greenLightOff(c);
@@ -312,15 +510,34 @@ public class MainActivity extends AppCompatActivity implements KeyEventResolver.
     protected void onStop() {
         // TODO Auto-generated method stub
         super.onStop();
+
+        stopResultLoop();
+
+        if (readThread != null) {
+            readThread.stopReading();
+            readThread = null;
+        }
+
+        try {
+            if (isNfcOpen) {
+                nfc.close();
+                isNfcOpen = false;
+            }
+        } catch (Exception e) {
+            Log.e("NFC", "Error closing NFC", e);
+        }
+
         if (mDecodeReader != null) {
             mDecodeReader.close();
+            mDecodeReader = null;
         }
+
         isreading = false;
         read = false;
         boolean read = false;
-        canRedirect = 0;
         logoutTimeCLickCount = 0;
-        handler.removeCallbacks(runnable);
+        // handler.removeCallbacks(runnable);
+
     }
 
     @Override
@@ -329,7 +546,6 @@ public class MainActivity extends AppCompatActivity implements KeyEventResolver.
 
         // Reset logout click counter
         logoutTimeCLickCount = 0;
-        canRedirect = 0;
 
         ////////////////// skenovanie cez QR
 
@@ -353,35 +569,23 @@ public class MainActivity extends AppCompatActivity implements KeyEventResolver.
                         @Override
                         public void run() {
 
-                            Log.d("canRedirect",String.valueOf(canRedirect));
-                            timedataApi.sendLogData("canRedirect", String.valueOf(canRedirect));
+                            // api call
+                            ticketPortalProvider = new ticketPortalProvider();
+                            if (str.length() > 3) {
+                                Log.d("STRING FROM SCANNER checkQRCodeStatus",str);
 
-                            if ( canRedirect == 0){
+                                // Start loopResultCode handler thread
+                                startResultLoop();
 
-                                // api call
-                                ticketPortalProvider = new ticketPortalProvider();
-                                try {
-                                    if (str.length() > 3) {
-                                        Log.d("STRING FROM SCANNER checkQRCodeStatus",str);
-                                        canRedirect = 1;
+                                new Thread(() -> {
+                                    try {
                                         ticketPortalProvider.checkQRCodeStatus(str, c);
+                                    } catch (Exception e) {
+                                        Log.e("API", "Error: " + e.getMessage());
                                     }
-                                } catch (JSONException e) {
-                                    canRedirect = 0;
-                                    timedataApi.sendLogData("api error", "1");
-                                    ticketPortalProvider.httpStatusCodeForRedirect = "empty";
-                                    startActivity(new Intent(MainActivity.this, scanQrRed.class));
-                                  //  finish();
-                                } catch (IOException e) {
-                                    canRedirect = 0;
-                                    timedataApi.sendLogData("api error", "2");
-                                    ticketPortalProvider.httpStatusCodeForRedirect = "empty";
-                                    startActivity(new Intent(MainActivity.this, scanQrRed.class));
-                                    //finish();
-                                }
+                                }).start();
+
                             }
-
-
 
                         }
                     });
@@ -397,11 +601,52 @@ public class MainActivity extends AppCompatActivity implements KeyEventResolver.
 
         int ret = mDecodeReader.open(115200);
         ////////////////// skenovanie cez QR
+
+
+        // Reset logout click counter
+        logoutTimeCLickCount = 0;
+
+        // NFC
+        try {
+            if (!isNfcOpen) { // Check the custom flag
+                nfc.open();
+                isNfcOpen = true; // Update the flag
+            }
+        } catch (DeviceAlreadyOpenException e) {
+            Log.w("NFC", "Device already open, skipping nfc.open()", e);
+            isNfcOpen = true; // Set the flag to true as it's already open
+        } catch (CommonException e) {
+            e.printStackTrace();
+        }
+
+        readThread = new ReadThread();
+        readThread.start();
+
     }
 
     @Override
     protected void onPause() {
         super.onPause();
+        stopResultLoop();
+
+        if (readThread != null) {
+            readThread.stopReading();
+            readThread = null;
+        }
+
+        try {
+            if (isNfcOpen) {
+                nfc.close();
+                isNfcOpen = false;
+            }
+        } catch (Exception e) {
+            Log.e("NFC", "Error closing NFC", e);
+        }
+
+        if (mDecodeReader != null) {
+            mDecodeReader.close();
+            mDecodeReader = null;
+        }
     }
 
     @Override
