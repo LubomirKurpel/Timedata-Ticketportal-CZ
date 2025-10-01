@@ -141,14 +141,14 @@ public class ticketPortalProvider extends Activity  {
                                             }
 
                                             ////////////////////////////// REQUEST 3 - // OVERENIE TICKETU
-                                            if(!IDpredstavenie.equals("")){
+                                            if (!IDpredstavenie.equals("")) {
                                                 Log.i("REQUEST 2 - ID_predstavenia", IDpredstavenie);
                                                 timedataApi.sendLogData("REQUEST 2 - ID_predstavenia", IDpredstavenie);
 
                                                 // Setup from GetPredstavenia
                                                 String IDjavisko = "0";
                                                 String IDpodujatie = "0";
-                                                String IDzona = "1";
+                                                String IDzona = "0";
                                                 String Kod = QR_Code;
 
                                                 // create zony json

@@ -21,7 +21,7 @@
 
     <drawable name="red">#891a1a</drawable>
     <drawable name="green">#0c7332</drawable>
-    <drawable name="gray">#ccc</drawable> 
+    <drawable name="gray">#ccc</drawable>
     <drawable name="white">#ffffff</drawable>
-    <drawable name="color_6b6b6b">#6B6B6B</drawable> 
+    <drawable name="color_6b6b6b">#6B6B6B</drawable>
 </resources>

@@ -22,7 +22,7 @@
     <attr name="menuborder_style" format="reference" />
     <attr name="listview_divide_color" format="color" />
     <attr name="listview_divide_height" format="dimension" />
-	<attr name="upper_right_corner" format="reference" />
-	<attr name="imgnetwork_background" format="reference" /> 
-	<attr name="dialogclose_background" format="reference" /> 
+    <attr name="upper_right_corner" format="reference" />
+    <attr name="imgnetwork_background" format="reference" />
+    <attr name="dialogclose_background" format="reference" />
 </resources>

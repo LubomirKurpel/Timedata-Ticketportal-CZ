@@ -58,7 +58,7 @@ import okhttp3.Response;
 
 public class settingsPage extends AppCompatActivity {
 
-	private TextView showTime, textView4;
+	private TextView showTime;
 	private ProgressDialog pDialog;
 	public static final int progress_bar_type = 0;
 
@@ -105,7 +105,6 @@ public class settingsPage extends AppCompatActivity {
 
 		// Show time in header
 		showTime = findViewById(R.id.showTime);
-		textView4 = findViewById(R.id.textView4);
 
 		Handler handler2 = new Handler();
 		handler2.postDelayed(new Runnable() {
@@ -133,76 +132,7 @@ public class settingsPage extends AppCompatActivity {
 		TextView currentVersion = findViewById(R.id.current_version_value);
 		currentVersion.setText(ver);
 
-		// Download and install APK button
-		Button downloadInstallApkButton = findViewById(R.id.download_install_apk);
 
-		// replace URL from json (server)
-		String downAppUrl = "https://timedata.grafdev.sk/sites/default/files/2023-08/app-debug.apk";  // https://timedata.grafdev.sk/api/app_version
-
-		// make HTTP request
-		final OkHttpClient client = new OkHttpClient();
-		Request request = new Request.Builder().url("https://timedata.grafdev.sk/api/app_version?package_name=com.timedata.ticketportal").build();
-
-		if (!isNetworkAvailable()) {
-			Toast.makeText(this, "No internet connection available", Toast.LENGTH_SHORT).show();
-			return;
-		}
-
-		client.newCall(request).enqueue(new Callback() {
-			@Override
-			public void onFailure(Call call, IOException e) {
-				Log.e("settingsPage", "HTTP request failed", e);
-				runOnUiThread(() -> Toast.makeText(settingsPage.this, "Failed to fetch version info", Toast.LENGTH_SHORT).show());
-			}
-
-			@Override
-			public void onResponse(Call call, Response response) throws IOException {
-				if (response.isSuccessful()) {
-					final String myResponse = response.body().string();
-					try {
-						String aJsonString = new JSONObject(myResponse).getString("data");
-						String app_version = new JSONObject(aJsonString).getString("app_version");
-						String downAppUrl = new JSONObject(aJsonString).getString("app_download_url");
-
-						// Correctly parse the version number
-						String[] versionParts = app_version.split(" ");
-						String versionNumberString = versionParts.length > 1 ? versionParts[1] : app_version;
-						double server_VERSION_CODE = Double.parseDouble(versionNumberString);
-						double current_VERSION_CODE = Double.parseDouble(ver);
-
-						runOnUiThread(() -> {
-							TextView serverVersionValue = findViewById(R.id.server_version_value);
-							serverVersionValue.setText(String.valueOf(server_VERSION_CODE));
-
-							// hide / show download & install buttons depends on app version
-							if (current_VERSION_CODE >= server_VERSION_CODE) {
-								// hide button
-								downloadInstallApkButton.setVisibility(View.GONE);
-								// show text
-								textView4.setVisibility(View.VISIBLE);
-							} else {
-								// exist new version = show button
-								downloadInstallApkButton.setVisibility(View.VISIBLE);
-								// hide text
-								textView4.setVisibility(View.GONE);
-							}
-
-							// Download and install new APK file
-							downloadInstallApkButton.setOnClickListener(v -> {
-								downloadWithProgress(getApplicationContext(), "app", ".apk", downAppUrl.trim());
-							});
-						});
-
-					} catch (JSONException | NumberFormatException e) {
-						Log.e("settingsPage", "Error parsing JSON response", e);
-						runOnUiThread(() -> Toast.makeText(settingsPage.this, "Error parsing version info", Toast.LENGTH_SHORT).show());
-						timedataApi.sendLogData("Error", "Error to get data about app's version from the server!");
-					}
-				} else {
-					Log.e("settingsPage", "Unsuccessful HTTP response");
-				}
-			}
-		});
 
 		// Back to app button
 		TextView backToAppButton = findViewById(R.id.spat_do_appky);
@@ -236,9 +166,12 @@ public class settingsPage extends AppCompatActivity {
 
 		// dropdown dnu von
 		Spinner spinner = findViewById(R.id.spinner);
-		ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
-				R.array.dropdown_values, android.R.layout.simple_spinner_item);
-		adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+		ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
+				this,
+				R.array.dropdown_values,
+				R.layout.spinner_item
+		);
+		adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
 		spinner.setAdapter(adapter);
 
 		SharedPreferences sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE);
