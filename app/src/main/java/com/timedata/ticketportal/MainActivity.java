@@ -105,6 +105,15 @@ public class MainActivity extends AppCompatActivity implements KeyEventResolver.
     private volatile boolean isNfcOpen = false;
     private final AtomicBoolean nfcReading = new AtomicBoolean(false);
 
+    private volatile String lastNfcUid = null;
+    private long lastNfcTimestamp = 0;
+    private static final long NFC_DEBOUNCE_MS = 2000; // 2 sekundy medzi rovnakými UID
+
+    private volatile String lastQrCode = null;
+    private long lastQrTimestamp = 0;
+    private static final long QR_DEBOUNCE_MS = 2000; // 2 sekundy ochrana pred duplicitou
+
+
     // ==== Hodiny ====
     private final Runnable clockTicker = new Runnable() {
         private final SimpleDateFormat HH = new SimpleDateFormat("HH");
@@ -280,18 +289,32 @@ public class MainActivity extends AppCompatActivity implements KeyEventResolver.
     protected void readNFCtag(byte[] nfcData) {
         if (nfcData == null || nfcData.length == 0) return;
 
-        // Spusti result loop (ak už nebeží, nespúšťaj opäť)
-        startResultLoopOnce();
-
-        Log.d("Raw NFC Data", Arrays.toString(nfcData));
-        // pôvodná logika extrakcie UID
+        // UID extraction
         byte[] uid = new byte[nfcData[5]];
         System.arraycopy(nfcData, 6, uid, 0, nfcData[5]);
         String hexUid = StringUtil.toHexString(uid);
 
-        // Debounce: neposielaj rovnaké kódy znova, ak už beží check
+        long now = System.currentTimeMillis();
+
+        // --- NFC debounce: ignoruj rovnakú kartu opakovane do 2 sekúnd ---
+        if (hexUid.equals(lastNfcUid) && (now - lastNfcTimestamp < NFC_DEBOUNCE_MS)) {
+            Log.d("NFC_TAG", "Duplicate NFC UID ignored: " + hexUid);
+            return;
+        }
+
+        lastNfcUid = hexUid;
+        lastNfcTimestamp = now;
+
+        // Spusti result loop (ak ešte nebeží)
+        startResultLoopOnce();
+
+        Log.d("Raw NFC Data", Arrays.toString(nfcData));
+        Log.d("NFC DATA", "nfcdata[" + hexUid + "]");
+
+        // Pošli UID do API, ak nie je prázdny
         submitCodeIfNeeded(hexUid);
     }
+
 
     // ======= QR =======
     private void initQrIfNeeded() {
@@ -301,7 +324,19 @@ public class MainActivity extends AppCompatActivity implements KeyEventResolver.
         mDecodeReader.setDecodeReaderListener(new IDecodeReaderListener() {
             @Override
             public void onRecvData(final byte[] data) {
+
                 final String str = new String(trim(data), UTF8);
+                long now = System.currentTimeMillis();
+
+                // --- QR debounce: ak rovnaký kód v krátkom čase, ignoruj ---
+                if (str.equals(lastQrCode) && (now - lastQrTimestamp < QR_DEBOUNCE_MS)) {
+                    Log.d("QR_SCAN", "Duplicate QR ignored: " + str);
+                    return;
+                }
+
+                lastQrCode = str;
+                lastQrTimestamp = now;
+
                 temporaryQrCode = str;
                 timedataApi.sendLogData("TICKETPORTAL API - set temporaryQrCode", str);
 
@@ -310,6 +345,7 @@ public class MainActivity extends AppCompatActivity implements KeyEventResolver.
 
                 // Debounce + submit
                 submitCodeIfNeeded(str);
+
 
             }
         });

@@ -69,30 +69,30 @@ public class timedataCoreFunctions extends Activity {
 
     // ovladanie diodiek
     public static void greenLightOn(Context context){
-      /*  redLightOff(context);
+        redLightOff(context);
         new CommonUtil(context).setColorLed(Integer.parseInt(String.valueOf(CommonConstants.LedType.COLOR_LED_1)), Integer.parseInt(String.valueOf(CommonConstants.LedColor.GREEN_LED)), 100);
         new CommonUtil(context).setColorLed(Integer.parseInt(String.valueOf(CommonConstants.LedType.COLOR_LED_2)), Integer.parseInt(String.valueOf(CommonConstants.LedColor.GREEN_LED)), 100);
         new CommonUtil(context).setColorLed(Integer.parseInt(String.valueOf(CommonConstants.LedType.COLOR_LED_3)), Integer.parseInt(String.valueOf(CommonConstants.LedColor.GREEN_LED)), 100);
-        new CommonUtil(context).setColorLed(Integer.parseInt(String.valueOf(CommonConstants.LedType.COLOR_LED_4)), Integer.parseInt(String.valueOf(CommonConstants.LedColor.GREEN_LED)), 100);*/
+        new CommonUtil(context).setColorLed(Integer.parseInt(String.valueOf(CommonConstants.LedType.COLOR_LED_4)), Integer.parseInt(String.valueOf(CommonConstants.LedColor.GREEN_LED)), 100);
     }
     public static void greenLightOff(Context context){
-      /*  new CommonUtil(context).setColorLed(Integer.parseInt(String.valueOf(CommonConstants.LedType.COLOR_LED_1)), Integer.parseInt(String.valueOf(CommonConstants.LedColor.GREEN_LED)), 0);
+        new CommonUtil(context).setColorLed(Integer.parseInt(String.valueOf(CommonConstants.LedType.COLOR_LED_1)), Integer.parseInt(String.valueOf(CommonConstants.LedColor.GREEN_LED)), 0);
         new CommonUtil(context).setColorLed(Integer.parseInt(String.valueOf(CommonConstants.LedType.COLOR_LED_2)), Integer.parseInt(String.valueOf(CommonConstants.LedColor.GREEN_LED)), 0);
         new CommonUtil(context).setColorLed(Integer.parseInt(String.valueOf(CommonConstants.LedType.COLOR_LED_3)), Integer.parseInt(String.valueOf(CommonConstants.LedColor.GREEN_LED)), 0);
-        new CommonUtil(context).setColorLed(Integer.parseInt(String.valueOf(CommonConstants.LedType.COLOR_LED_4)), Integer.parseInt(String.valueOf(CommonConstants.LedColor.GREEN_LED)), 0);*/
+        new CommonUtil(context).setColorLed(Integer.parseInt(String.valueOf(CommonConstants.LedType.COLOR_LED_4)), Integer.parseInt(String.valueOf(CommonConstants.LedColor.GREEN_LED)), 0);
     }
     public static void redLightOn(Context context){
-       /* greenLightOff(context);
+        greenLightOff(context);
         new CommonUtil(context).setColorLed(Integer.parseInt(String.valueOf(CommonConstants.LedType.COLOR_LED_1)), Integer.parseInt(String.valueOf(CommonConstants.LedColor.RED_LED)), 100);
         new CommonUtil(context).setColorLed(Integer.parseInt(String.valueOf(CommonConstants.LedType.COLOR_LED_2)), Integer.parseInt(String.valueOf(CommonConstants.LedColor.RED_LED)), 100);
         new CommonUtil(context).setColorLed(Integer.parseInt(String.valueOf(CommonConstants.LedType.COLOR_LED_3)), Integer.parseInt(String.valueOf(CommonConstants.LedColor.RED_LED)), 100);
-        new CommonUtil(context).setColorLed(Integer.parseInt(String.valueOf(CommonConstants.LedType.COLOR_LED_4)), Integer.parseInt(String.valueOf(CommonConstants.LedColor.RED_LED)), 100);*/
+        new CommonUtil(context).setColorLed(Integer.parseInt(String.valueOf(CommonConstants.LedType.COLOR_LED_4)), Integer.parseInt(String.valueOf(CommonConstants.LedColor.RED_LED)), 100);
     }
     public static void redLightOff(Context context){
-      /*  new CommonUtil(context).setColorLed(Integer.parseInt(String.valueOf(CommonConstants.LedType.COLOR_LED_1)), Integer.parseInt(String.valueOf(CommonConstants.LedColor.RED_LED)), 0);
+        new CommonUtil(context).setColorLed(Integer.parseInt(String.valueOf(CommonConstants.LedType.COLOR_LED_1)), Integer.parseInt(String.valueOf(CommonConstants.LedColor.RED_LED)), 0);
         new CommonUtil(context).setColorLed(Integer.parseInt(String.valueOf(CommonConstants.LedType.COLOR_LED_2)), Integer.parseInt(String.valueOf(CommonConstants.LedColor.RED_LED)), 0);
         new CommonUtil(context).setColorLed(Integer.parseInt(String.valueOf(CommonConstants.LedType.COLOR_LED_3)), Integer.parseInt(String.valueOf(CommonConstants.LedColor.RED_LED)), 0);
-        new CommonUtil(context).setColorLed(Integer.parseInt(String.valueOf(CommonConstants.LedType.COLOR_LED_4)), Integer.parseInt(String.valueOf(CommonConstants.LedColor.RED_LED)), 0);*/
+        new CommonUtil(context).setColorLed(Integer.parseInt(String.valueOf(CommonConstants.LedType.COLOR_LED_4)), Integer.parseInt(String.valueOf(CommonConstants.LedColor.RED_LED)), 0);
     }
 
 }
